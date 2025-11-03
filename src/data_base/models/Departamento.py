@@ -1,8 +1,9 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
+from src.data_base.models.base import Base
 
-class Departamento(table=True):
+class Departamento(Base):
     #Atributos.
     __tablename__ = "departamentos"
 
