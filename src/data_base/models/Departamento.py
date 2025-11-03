@@ -12,6 +12,9 @@ class Departamento(Base):
     descripcion = Column(String, nullable=False)
     password = Column(String, unique=True, nullable=False)
 
+    #Relaciones. (Un Departamento tiene muchos Profesores)
+    profesores = relationship("Profesor", back_populates="departamento")
+
 
 
 
