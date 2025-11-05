@@ -11,10 +11,8 @@ from alembic import context
 import os
 from dotenv import load_dotenv
 
-from src.data_base.models.base import Base
-from src.data_base.models.Departamento import Departamento
-from src.data_base.models.Profesor import Profesor
-from src.data_base.models.Alumno import Alumno
+from src.data_base.models.base import Base, profesor_alumno_tabla
+from src.data_base.models.models import Departamento, Profesor, Alumno
 
 
 #Cargar Variables de Entorno.

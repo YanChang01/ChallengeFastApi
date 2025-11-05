@@ -1,21 +1,20 @@
 from pydantic import EmailStr
-from src.data_base.schemas.base import Base
+from data_base.schemas.base import Base
 
 class CreateProfesor(Base):
-    id: str
+    id_profesor: int
     nombre: str
     asignatura: str
     email: EmailStr
     password: str
-
-    class Config:
-        orm_mode = True
+    departamento_id: int
 
 class ReadProfesor(Base):
-    id: str
+    id_profesor: int
     nombre: str
     asignatura: str
     email: EmailStr
+    departamento_id: int
 
     class Config:
         orm_mode = True
@@ -24,9 +23,8 @@ class UpdateProfesor(Base):
     nombre: str
     asignatura: str
     email: EmailStr
+    departamento_id: int
 
-    class Config:
-        orm_mode = True
 
 
 

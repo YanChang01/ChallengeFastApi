@@ -9,7 +9,7 @@ class Base(DeclarativeBase):
 
 #Tabla para resolver la relación de m:n de Profesor-Alumno.
 profesor_alumno_tabla = Table(
-    "profesor-alumno",
+    'profesor_alumno',
     Base.metadata,
     Column("profesor_id", Integer, ForeignKey("profesores.id_profesor"), primary_key=True),
     Column("alumno_id", Integer, ForeignKey("alumnos.id_alumno"), primary_key=True)

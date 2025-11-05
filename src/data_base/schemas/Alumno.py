@@ -1,18 +1,15 @@
 from pydantic import EmailStr
-from src.data_base.schemas.base import Base
+from data_base.schemas.base import Base
 
 class CreateAlumno(Base):
-    id: int
+    id_alumno: int
     nombre: str
     facultad: str
     email: EmailStr
     password: str
 
-    class Config:
-        orm_mode = True
-
 class ReadAlumno(Base):
-    id: int
+    id_alumno: int
     nombre: str
     facultad: str
     email: EmailStr
@@ -25,8 +22,6 @@ class UpdateAlumno(Base):
     facultad: str
     email: EmailStr
 
-    class Config:
-        orm_mode = True
 
 
 
