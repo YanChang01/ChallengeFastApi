@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
+from routers.Autenticacion import auth_profesor
 from crud.Alumno import create_alumno, read_alumno, read_alumnos, update_alumno, delete_alumno, filtrar_eliminados
 from data_base.client import get_session
 from data_base.schemas.Alumno import CreateAlumno, ReadAlumno, UpdateAlumno
@@ -14,7 +15,10 @@ router = APIRouter()
 
 #Create.
 @router.post("/insertar/alumno", response_model=ReadAlumno, status_code=status.HTTP_201_CREATED)
-async def crear_alumno(alumno: CreateAlumno, session: AsyncSession = Depends(get_session)) -> ReadAlumno:
+async def crear_alumno(alumno: CreateAlumno, session: AsyncSession = Depends(get_session), auth: bool = Depends(auth_profesor)) -> ReadAlumno:
+    if not auth:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token JWT inválido")
+    
     alumno_data = alumno.model_dump() #Json de alumno.
 
     #Crear el alumno en la BD.
@@ -44,7 +48,10 @@ async def leer_alumnos_eliminados(limite: int, session: AsyncSession = Depends(g
 
 #Update.
 @router.put("/actualizar/alumno/{id_alumno}", response_model=ReadAlumno)
-async def actualizar_alumno(id_alumno: int, alumno_actualizado: UpdateAlumno, session: AsyncSession = Depends(get_session)):
+async def actualizar_alumno(id_alumno: int, alumno_actualizado: UpdateAlumno, session: AsyncSession = Depends(get_session), auth: bool = Depends(auth_profesor)):
+    if not auth:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token JWT inválido")
+    
     update_alumno_data: dict = alumno_actualizado.model_dump() #Json de alumno_actualizado.
 
     alumno: ReadAlumno = await update_alumno(id_alumno=id_alumno, update_alumno=update_alumno_data, db_session=session)
@@ -53,7 +60,10 @@ async def actualizar_alumno(id_alumno: int, alumno_actualizado: UpdateAlumno, se
 
 #Delete.
 @router.delete("/eliminar/alumno/{id_alumno}")
-async def eliminar_alumno(id_alumno: int, session: AsyncSession = Depends(get_session)):
+async def eliminar_alumno(id_alumno: int, session: AsyncSession = Depends(get_session), auth: bool = Depends(auth_profesor)):
+    if not auth:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token JWT inválido")
+    
     result = await delete_alumno(id_alumno=id_alumno, db_session=session)
 
     if not result:

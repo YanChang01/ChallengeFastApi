@@ -17,7 +17,7 @@ from src.data_base.models.models import Departamento, Profesor, Alumno
 
 #Cargar Variables de Entorno.
 load_dotenv()
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL no configurada")

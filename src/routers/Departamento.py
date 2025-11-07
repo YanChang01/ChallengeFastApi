@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
+from routers.Autenticacion import auth_profesor
 from crud.Departamento import create_departamento, read_departamento, read_departamentos, update_departamento, delete_departamento, filtrar_eliminados
 from data_base.client import get_session
 from data_base.schemas.Departamento import CreateDepartamento, ReadDepartamento, UpdateDepartamento
@@ -44,7 +45,10 @@ async def leer_departamentos_eliminados(limite: int, session: AsyncSession = Dep
 
 #Update.
 @router.put("/actualizar/departamento/{id_departamento}", response_model=ReadDepartamento)
-async def actualizar_departamento(id_departamento: int, departamento_actualizado: UpdateDepartamento, session: AsyncSession = Depends(get_session)):
+async def actualizar_departamento(id_departamento: int, departamento_actualizado: UpdateDepartamento, session: AsyncSession = Depends(get_session), auth: bool = Depends(auth_profesor)):
+    if not auth:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token JWT inválido")
+    
     update_departamento_data: dict = departamento_actualizado.model_dump() #Json de update_departamento.
 
     departamento: ReadDepartamento = await update_departamento(id_departamento=id_departamento, update_departamento=update_departamento_data, db_session=session)
@@ -53,7 +57,10 @@ async def actualizar_departamento(id_departamento: int, departamento_actualizado
 
 #Delete.
 @router.delete("/eliminar/departamento/{id_departamento}")
-async def eliminar_departamento(id_departamento: int, session: AsyncSession = Depends(get_session)):
+async def eliminar_departamento(id_departamento: int, session: AsyncSession = Depends(get_session), auth: bool = Depends(auth_profesor)):
+    if not auth:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token JWT inválido")
+    
     result = await delete_departamento(id_departamento=id_departamento, db_session=session)
 
     if not result:

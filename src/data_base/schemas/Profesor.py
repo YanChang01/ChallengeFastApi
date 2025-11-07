@@ -1,4 +1,4 @@
-from pydantic import EmailStr
+from pydantic import EmailStr, Field
 from data_base.schemas.base import Base
 
 class CreateProfesor(Base):

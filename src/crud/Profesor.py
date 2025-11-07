@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, delete, func
 
+from core.security import password_hash
 from data_base.models.models import Profesor, Departamento
 from data_base.schemas.Profesor import CreateProfesor, ReadProfesor, UpdateProfesor
 
@@ -26,16 +27,17 @@ async def create_profesor(profesor_data: dict, db_session: AsyncSession) -> Read
 
     #Validar departamento_id.
     statement_departamento_id = await db_session.execute(select(Departamento).where(Departamento.id_departamento == profesor_data.get("departamento_id")))
-    db_departamento_id = statement_departamento_id.scalar_one_or_none()
+    db_departamento_id: Departamento = statement_departamento_id.scalar_one_or_none()
 
-    if db_departamento_id is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No existe un departamento con ese id")
+    if not db_departamento_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El id del departamento no existe")
 
     #Crear db_profesor.
     db_profesor: Profesor = Profesor(**profesor_data)
 
     #Hashear contraseña.
-
+    hash_password: str = password_hash(db_profesor.password)
+    db_profesor.password = hash_password
 
     #Aplicar cambios en la Base de Datos.
     db_session.add(db_profesor)
