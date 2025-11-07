@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from crud.Departamento import create_departamento, read_departamento, read_departamentos, update_departamento
+from crud.Departamento import create_departamento, read_departamento, read_departamentos, update_departamento, delete_departamento, filtrar_eliminados
 from data_base.client import get_session
 from data_base.schemas.Departamento import CreateDepartamento, ReadDepartamento, UpdateDepartamento
 
@@ -36,6 +36,12 @@ async def leer_departamentos(limite: int, session: AsyncSession = Depends(get_se
     
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Límite inválido")
 
+@router.get("/obtener/departamentos/eliminados/{limite}", response_model=List[ReadDepartamento])
+async def leer_departamentos_eliminados(limite: int, session: AsyncSession = Depends(get_session)):
+    departamentos_eliminados: List[ReadDepartamento] = await filtrar_eliminados(limite=limite, db_session=session)
+
+    return departamentos_eliminados
+
 #Update.
 @router.put("/actualizar/departamento/{id_departamento}", response_model=ReadDepartamento)
 async def actualizar_departamento(id_departamento: int, departamento_actualizado: UpdateDepartamento, session: AsyncSession = Depends(get_session)):
@@ -44,3 +50,17 @@ async def actualizar_departamento(id_departamento: int, departamento_actualizado
     departamento: ReadDepartamento = await update_departamento(id_departamento=id_departamento, update_departamento=update_departamento_data, db_session=session)
 
     return departamento
+
+#Delete.
+@router.delete("/eliminar/departamento/{id_departamento}")
+async def eliminar_departamento(id_departamento: int, session: AsyncSession = Depends(get_session)):
+    result = await delete_departamento(id_departamento=id_departamento, db_session=session)
+
+    if not result:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="No se ha podido eliminar el Departamento")
+    
+    return "Departamento eliminado con éxito."
+
+
+
+

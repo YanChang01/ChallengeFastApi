@@ -43,32 +43,33 @@ async def create_profesor(profesor_data: dict, db_session: AsyncSession) -> Read
     await db_session.refresh(db_profesor)
 
     #Crear response_profesor.
-    response_profesor: ReadProfesor = ReadProfesor(id_profesor=db_profesor.id_profesor, nombre=db_profesor.nombre, asignatura=db_profesor.asignatura, email=db_profesor.email, departamento_id=db_profesor.departamento_id)
-
-    return response_profesor
+    return ReadProfesor.model_validate(db_profesor)
 
 #READ.
 async def read_profesor(id_profesor: int, db_session: AsyncSession) -> ReadProfesor:
     #Buscar profesor por id.
-    statement_profesor = await db_session.execute(select(Profesor).where(Profesor.id_profesor == id_profesor))
+    statement_profesor = await db_session.execute(select(Profesor).where(Profesor.id_profesor == id_profesor).where(Profesor.is_deleted == False))
     profesor: Profesor = statement_profesor.scalar_one_or_none()
 
     if profesor is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El id del Profesor no existe")
 
     #Response_profesor.
-    response_profesor: ReadProfesor = ReadProfesor(id_profesor=profesor.id_profesor, nombre=profesor.nombre, asignatura=profesor.asignatura, email=profesor.email, departamento_id=profesor.departamento_id)
+    return ReadProfesor.model_validate(profesor)
 
-    return response_profesor
+async def read_profesores(limite: int, db_session: AsyncSession) -> List[ReadProfesor]:
+    statement_profesores = await db_session.execute(select(Profesor).where(Profesor.is_deleted == False).limit(limite))
+    profesores: List[Profesor] = statement_profesores.scalars().all()
 
-async def read_profesores(limite: int, db_session: AsyncSession) -> List[Profesor]:
-    statement_profesor = await db_session.execute(select(Profesor).offset(0).limit(limite))
-    profesor: List[Profesor] = statement_profesor.scalars().all()
+    #Response_profesores.
+    return [ReadProfesor.model_validate(p) for p in profesores]
 
-    #Response_profesor.
-    response_profesor: List[ReadProfesor] = profesor
-    
-    return response_profesor
+async def filtrar_eliminados(limite: int, db_session: AsyncSession) -> List[ReadProfesor]:
+    statement_profesores = await db_session.execute(select(Profesor).where(Profesor.is_deleted == True))
+    profesores: List[Profesor] = statement_profesores.scalars().all()
+
+    #Response_profesores.
+    return [ReadProfesor.model_validate(p) for p in profesores]
 
 #UPDATE.
 async def update_profesor(id_profesor: int, update_profesor: dict, db_session: AsyncSession) -> ReadProfesor:
@@ -102,6 +103,28 @@ async def update_profesor(id_profesor: int, update_profesor: dict, db_session: A
     await db_session.refresh(profesor)
 
     #Crear el response_profesor.
-    response_profesor: ReadProfesor = ReadProfesor(id_profesor=profesor.id_profesor, nombre=profesor.nombre, asignatura=profesor.asignatura, email=profesor.email, departamento_id=profesor.departamento_id)
+    return ReadProfesor.model_validate(profesor)
 
-    return response_profesor
+#DELETE.
+async def delete_profesor(id_profesor: int, db_session: AsyncSession) -> bool:
+    consulta = select(Profesor).where(Profesor.id_profesor == id_profesor)
+    statement_profesor = await db_session.execute(consulta)
+    db_profesor = statement_profesor.scalar_one_or_none()
+
+    #Validar si el registro existe y no se ha marcado como eliminado.
+    if not db_profesor or db_profesor.is_deleted:
+        return False
+
+    #Actualizar las columnas soft-delete.
+    statement_update = update(Profesor).where(Profesor.id_profesor == id_profesor).values(is_deleted=True, deleted_at=func.now())
+
+    #Aplicar cambios en la BD.
+    await db_session.execute(statement_update)
+    await db_session.commit()
+
+    return True
+
+
+
+
+

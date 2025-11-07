@@ -6,7 +6,6 @@ class CreateAlumno(Base):
     nombre: str
     facultad: str
     email: EmailStr
-    password: str
 
 class ReadAlumno(Base):
     id_alumno: int
@@ -14,8 +13,10 @@ class ReadAlumno(Base):
     facultad: str
     email: EmailStr
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
+
 
 class UpdateAlumno(Base):
     nombre: str

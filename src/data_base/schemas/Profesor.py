@@ -16,8 +16,9 @@ class ReadProfesor(Base):
     email: EmailStr
     departamento_id: int
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class UpdateProfesor(Base):
     nombre: str

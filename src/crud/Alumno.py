@@ -30,41 +30,39 @@ async def create_alumno(alumno_data: dict, db_session: AsyncSession) -> ReadAlum
     #Crear db_alumno.
     db_alumno: Alumno = Alumno(**alumno_data)
 
-    #Hashear contraseña.
-
-
     #Aplicar cambios en la Base de Datos.
     db_session.add(db_alumno)
     await db_session.commit()
     await db_session.refresh(db_alumno)
 
     #Crear response_alumno.
-    response_alumno: ReadAlumno = ReadAlumno(id_alumno=db_alumno.id_alumno, nombre=db_alumno.nombre, facultad=db_alumno.facultad, email=db_alumno.email)
-
-    return response_alumno
+    return ReadAlumno.model_validate(db_alumno)
 
 #READ.
 async def read_alumno(id_alumno: int, db_session: AsyncSession) -> ReadAlumno:
     #Buscar alumno por id.
-    statement_alumno = await db_session.execute(select(Alumno).where(Alumno.id_alumno == id_alumno))
+    statement_alumno = await db_session.execute(select(Alumno).where(Alumno.id_alumno == id_alumno).where(Alumno.is_deleted == False))
     alumno: Alumno = statement_alumno.scalar_one_or_none()
 
     if alumno is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El id del Alumno no existe")
 
     #Response_alumno.
-    response_alumno: ReadAlumno = ReadAlumno(id_alumno=alumno.id_alumno, nombre=alumno.nombre, facultad=alumno.facultad, email=alumno.email)
+    return ReadAlumno.model_validate(alumno)
 
-    return response_alumno
-
-async def read_alumnos(limite: int, db_session: AsyncSession) -> List[Alumno]:
-    statement_alumno = await db_session.execute(select(Alumno).offset(0).limit(limite))
-    alumnos: List[Alumno] = statement_alumno.scalars().all()
+async def read_alumnos(limite: int, db_session: AsyncSession) -> List[ReadAlumno]:
+    statement_alumnos = await db_session.execute(select(Alumno).where(Alumno.is_deleted == False).offset(0).limit(limite))
+    alumnos: List[Alumno] = statement_alumnos.scalars().all()
 
     #Response_alumnos.
-    response_alumnos: List[ReadAlumno] = alumnos
-    
-    return response_alumnos
+    return [ReadAlumno.model_validate(a) for a in alumnos]
+
+async def filtrar_eliminados(limite: int, db_session: AsyncSession) -> List[ReadAlumno]:
+    statement_alumnos = await db_session.execute(select(Alumno).where(Alumno.is_deleted == True).limit(limite))
+    alumnos: List[Alumno] = statement_alumnos.scalars().all()
+
+    #Response_alumnos.
+    return [ReadAlumno.model_validate(a) for a in alumnos]
 
 #UPDATE.
 async def update_alumno(id_alumno: int, update_alumno: dict, db_session: AsyncSession) -> ReadAlumno:
@@ -91,10 +89,25 @@ async def update_alumno(id_alumno: int, update_alumno: dict, db_session: AsyncSe
     await db_session.refresh(alumno)
 
     #Crear el response_alumno.
-    response_alumno: ReadAlumno = ReadAlumno(id_alumno=alumno.id_alumno, nombre=alumno.nombre, facultad=alumno.facultad, email=alumno.email)
+    return ReadAlumno.model_validate(alumno)
 
-    return response_alumno
+#DELETE.
+async def delete_alumno(id_alumno: int, db_session: AsyncSession) -> bool:
+    consulta = select(Alumno).where(Alumno.id_alumno == id_alumno)
+    statement_alumno = await db_session.execute(consulta)
+    db_alumno = statement_alumno.scalar_one_or_none()
 
+    #Validar si el registro existe y no se ha marcado como eliminado.
+    if not db_alumno or db_alumno.is_deleted:
+        return False
 
+    #Actualizar las columnas soft-delete.
+    statement_update = update(Alumno).where(Alumno.id_alumno == id_alumno).values(is_deleted=True, deleted_at=func.now())
+
+    #Aplicar cambios en la BD.
+    await db_session.execute(statement_update)
+    await db_session.commit()
+
+    return True
 
 

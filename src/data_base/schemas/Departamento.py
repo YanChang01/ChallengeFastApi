@@ -4,15 +4,15 @@ class CreateDepartamento(Base):
     id_departamento : int
     nombre: str
     descripcion: str
-    password: str
 
 class ReadDepartamento(Base):
     id_departamento: int
     nombre: str
     descripcion: str
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class UpdateDepartamento(Base):
     nombre: str

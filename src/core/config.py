@@ -8,6 +8,7 @@ load_dotenv()
 #Seguridad.
 SECRET = os.getenv("SECRET")
 ALGORITMO = os.getenv("ALGORITMO")
+ACCESS_TOKEN_DURATION = os.getenv("ACCESS_TOKEN_DURATION")
 
 #URL de conexión.
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -19,5 +20,6 @@ class Settings(BaseModel):
     DATABASE_URL: str = DATABASE_URL
     SECRET: str = SECRET
     ALGORITMO: str = ALGORITMO
+    ACCESS_TOKEN_DURATION: int = ACCESS_TOKEN_DURATION
 
 settings = Settings()

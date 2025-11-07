@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from crud.Alumno import create_alumno, read_alumno, read_alumnos, update_alumno
+from crud.Alumno import create_alumno, read_alumno, read_alumnos, update_alumno, delete_alumno, filtrar_eliminados
 from data_base.client import get_session
 from data_base.schemas.Alumno import CreateAlumno, ReadAlumno, UpdateAlumno
 
@@ -36,6 +36,12 @@ async def leer_alumnos(limite: int, session: AsyncSession = Depends(get_session)
     
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Límite inválido")
 
+@router.get("/obtener/alumnos/eliminados/{limite}", response_model=List[ReadAlumno])
+async def leer_alumnos_eliminados(limite: int, session: AsyncSession = Depends(get_session)):
+    alumnos_eliminados: List[ReadAlumno] = await filtrar_eliminados(limite=limite, db_session=session)
+
+    return alumnos_eliminados
+
 #Update.
 @router.put("/actualizar/alumno/{id_alumno}", response_model=ReadAlumno)
 async def actualizar_alumno(id_alumno: int, alumno_actualizado: UpdateAlumno, session: AsyncSession = Depends(get_session)):
@@ -45,6 +51,14 @@ async def actualizar_alumno(id_alumno: int, alumno_actualizado: UpdateAlumno, se
 
     return alumno
 
+#Delete.
+@router.delete("/eliminar/alumno/{id_alumno}")
+async def eliminar_alumno(id_alumno: int, session: AsyncSession = Depends(get_session)):
+    result = await delete_alumno(id_alumno=id_alumno, db_session=session)
 
+    if not result:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="No se ha podido eliminar al Alumno")
+    
+    return "Alumno eliminado con éxito."
 
 
