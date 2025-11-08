@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, func
+from sqlalchemy import Integer, String, ForeignKey, Boolean, DateTime, func
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from typing import List, Optional
+from typing import List
 
 from data_base.models.base import Base, profesor_alumno_tabla
 
@@ -14,10 +14,10 @@ class SoftDeleteMixin:
 
 #Mixin para implementar Timestamp.
 class TimestampMixin:
-    #Columna para cuando se crea.
+    #Columna para timestamp de creación.
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    #Columna para cuando se actualiza.
+    #Columna para timestamp de actualización.
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class Departamento(Base, SoftDeleteMixin, TimestampMixin):
@@ -30,7 +30,6 @@ class Departamento(Base, SoftDeleteMixin, TimestampMixin):
 
     #Relaciones. (Un Departamento tiene muchos Profesores)
     profesores: Mapped[List["Profesor"]] = relationship("Profesor", back_populates="departamentos")
-
 
 class Profesor(Base, SoftDeleteMixin, TimestampMixin):
     #Atributos.
@@ -51,7 +50,6 @@ class Profesor(Base, SoftDeleteMixin, TimestampMixin):
     #Relacion de m:n (Un alumno tiene muchos profesores y un profesor tiene muchos alumnos)
     #Hay que utilizar la tabla intermedia profesor_alumno_tabla para establecer la relación.
     alumnos: Mapped[List["Alumno"]] = relationship(secondary=profesor_alumno_tabla, back_populates="profesores")
-
 
 class Alumno(Base, SoftDeleteMixin, TimestampMixin):
     #Atributos.

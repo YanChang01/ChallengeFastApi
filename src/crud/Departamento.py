@@ -1,30 +1,23 @@
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 
-from typing import List, Optional
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete, func
+from sqlalchemy import update, func, or_ 
 
 from data_base.models.models import Departamento
-from data_base.schemas.Departamento import CreateDepartamento, ReadDepartamento, UpdateDepartamento
+from data_base.schemas.Departamento import ReadDepartamento
 
 #CRUD de Departamento.
 
 #CREATE.
 async def create_departamento(departamento_data: dict, db_session: AsyncSession) -> ReadDepartamento:
-    #Validar id.
-    statement_id = await db_session.execute(select(Departamento).where(Departamento.id_departamento == departamento_data.get("id_departamento")))
-    db_departamento_id = statement_id.scalar_one_or_none()
+    #Validar id y nombre. 
+    statement = await db_session.execute(select(Departamento).where(or_(Departamento.id_departamento == departamento_data.get("id_departamento"), Departamento.nombre == departamento_data.get("nombre"))))
+    db_departamento: Departamento = statement.scalar_one_or_none()
 
-    if isinstance(db_departamento_id, Departamento):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El id ya existe")
-
-    #Validar nombre.
-    statement_nombre = await db_session.execute(select(Departamento).where(Departamento.nombre == departamento_data.get("nombre")))
-    db_departamento_nombre = statement_nombre.scalar_one_or_none()
-
-    if isinstance(db_departamento_nombre, Departamento):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El nombre ya existe")
+    if isinstance(db_departamento, Departamento):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error": "El id o el nombre ya existen"})
 
     #Crear db_departamento.
     db_departamento: Departamento = Departamento(**departamento_data)
@@ -39,15 +32,12 @@ async def create_departamento(departamento_data: dict, db_session: AsyncSession)
 
 #READ.
 async def read_departamento(id_departamento: int, db_session: AsyncSession) -> ReadDepartamento:
-    #Buscar departamento por id y aplicar el filtro.
-    statement_departamento = select(Departamento).where(Departamento.id_departamento == id_departamento).where(Departamento.is_deleted == False)
-
     #Consulta con la BD.
-    result = await db_session.execute(statement_departamento)
+    result = await db_session.execute(select(Departamento).where(Departamento.id_departamento == id_departamento).where(Departamento.is_deleted == False))
     departamento: Departamento = result.scalar_one_or_none()
     
     if not isinstance(departamento, Departamento):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El id del Departamento no existe")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error": "El id del Departamento no existe"})
 
     #Response_departamento.
     return ReadDepartamento.model_validate(departamento)
@@ -72,7 +62,7 @@ async def update_departamento(id_departamento: int, update_departamento: dict, d
     departamento: Departamento = statement_departamento.scalar_one_or_none()
 
     if departamento is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El id del Departamento no existe")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error": "El id del Departamento no existe"})
     
     #Actualización.
     actualizacion = update(Departamento).where(Departamento.id_departamento == id_departamento).values(update_departamento)
@@ -87,8 +77,7 @@ async def update_departamento(id_departamento: int, update_departamento: dict, d
 
 #DELETE.
 async def delete_departamento(id_departamento: int, db_session: AsyncSession) -> bool:
-    consulta = select(Departamento).where(Departamento.id_departamento == id_departamento)
-    statement_departamento = await db_session.execute(consulta)
+    statement_departamento = await db_session.execute(select(Departamento).where(Departamento.id_departamento == id_departamento))
     db_departamento = statement_departamento.scalar_one_or_none()
 
     #Validar si el registro existe y no se ha marcado como eliminado.

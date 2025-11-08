@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, status
 
 from routers import Departamento, Profesor, Alumno, Autenticacion
 from middlewares.registro_middleware import tiempo_middleware
+from core.config import settings
 
 #API.
 app = FastAPI()
@@ -16,9 +17,9 @@ app.include_router(Autenticacion.router)
 app.middleware("http")(tiempo_middleware)
 
 #EndPoints.
-@app.get("/")
-async def inicio():
-    return "Bienvenido a la API de nuestra universidad"
+@app.get("/", status_code=status.HTTP_200_OK)
+async def root():
+    return f"Bienvenido a la APP {settings.PROJECT_NAME} versión {settings.PROJECT_VERSION}"
 
 
 

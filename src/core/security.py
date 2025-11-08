@@ -1,12 +1,11 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import jwt, JWTError, ExpiredSignatureError
-from datetime import datetime, timedelta
 
 from core.config import settings
 
-#Security
+#Security.
 
 """
 Estructura del JWT.
@@ -29,13 +28,15 @@ oauth2 = OAuth2PasswordBearer(tokenUrl="/login")
 crypt = CryptContext(schemes=["bcrypt"])
 
 #Hashing para contraseñas.
-def password_hash(password: str) -> str: #Hash.
-    password_bytes = password.encode(encoding="utf-8")[:72]
+#Hash.
+def password_hash(password: str) -> str: 
+    password_bytes = password.encode(encoding="utf-8")[:72] #Validación de longitud de contraseña. (Hasta 72 bytes -> bcrypt)
     password_truncado: str = password_bytes.decode("utf-8", errors="ignore")
 
     return crypt.hash(password_truncado)
 
-def verificar_password(plain_password: str, hashed_password: str) -> bool: #Verificar hash.
+#Verificar hash.
+def verificar_password(plain_password: str, hashed_password: str) -> bool: 
     return crypt.verify(plain_password, hashed_password)
 
 #Autenticación.

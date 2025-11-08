@@ -16,7 +16,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 #Clase Settings.
 class Settings(BaseModel):
     PROJECT_NAME: str = "FastApi_Challenge"
-    PROJECT_VERSION: str = "0.0.1"
+    PROJECT_VERSION: str = "1.0"
     DATABASE_URL: str = DATABASE_URL
     SECRET: str = SECRET
     ALGORITMO: str = ALGORITMO

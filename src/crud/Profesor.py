@@ -1,13 +1,13 @@
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 
-from typing import List, Optional
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete, func
+from sqlalchemy import update, func
 
 from core.security import password_hash
 from data_base.models.models import Profesor, Departamento
-from data_base.schemas.Profesor import CreateProfesor, ReadProfesor, UpdateProfesor
+from data_base.schemas.Profesor import ReadProfesor
 
 #CREATE.
 async def create_profesor(profesor_data: dict, db_session: AsyncSession) -> ReadProfesor:
@@ -16,21 +16,21 @@ async def create_profesor(profesor_data: dict, db_session: AsyncSession) -> Read
     db_profesor_id = statement_id.scalar_one_or_none()
 
     if isinstance(db_profesor_id, Profesor):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El id ya existe")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error": "El id ya existe"})
 
     #Validar email.
     statement_email = await db_session.execute(select(Profesor).where(Profesor.email == profesor_data.get("email")))
     db_profesor_email = statement_email.scalar_one_or_none()
 
     if isinstance(db_profesor_email, Profesor):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El email ya existe")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error": "El email ya existe"})
 
     #Validar departamento_id.
     statement_departamento_id = await db_session.execute(select(Departamento).where(Departamento.id_departamento == profesor_data.get("departamento_id")))
     db_departamento_id: Departamento = statement_departamento_id.scalar_one_or_none()
 
     if not db_departamento_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El id del departamento no existe")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error": "El id del departamento no existe"})
 
     #Crear db_profesor.
     db_profesor: Profesor = Profesor(**profesor_data)
@@ -54,7 +54,7 @@ async def read_profesor(id_profesor: int, db_session: AsyncSession) -> ReadProfe
     profesor: Profesor = statement_profesor.scalar_one_or_none()
 
     if profesor is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El id del Profesor no existe")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error": "El id del Profesor no existe"})
 
     #Response_profesor.
     return ReadProfesor.model_validate(profesor)
@@ -75,26 +75,19 @@ async def filtrar_eliminados(limite: int, db_session: AsyncSession) -> List[Read
 
 #UPDATE.
 async def update_profesor(id_profesor: int, update_profesor: dict, db_session: AsyncSession) -> ReadProfesor:
-    statement_profesor = await db_session.execute(select(Profesor).where(Profesor.id_profesor == id_profesor))
+    statement_profesor = await db_session.execute(select(Profesor).where(Profesor.id_profesor == id_profesor).where(Departamento.id_departamento == update_profesor.get("departamento_id")))
     profesor: Profesor = statement_profesor.scalar_one_or_none()
 
     #Validar id_profesor.
     if profesor is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El id no existe")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error": "El id_profesor o el id_departamento no existe"})
     
     #Validar email.
     statement_email = await db_session.execute(select(Profesor).where(Profesor.email == update_profesor.get("email")))
     profesor_email: Profesor = statement_email.scalar_one_or_none()
 
     if isinstance(profesor_email, Profesor):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El email ya existe")
-
-    #Validar departamento_id.
-    statement_departamento_id = await db_session.execute(select(Departamento).where(Departamento.id_departamento == update_profesor.get("departamento_id")))
-    departamento_id: Departamento = statement_departamento_id.scalar_one_or_none()
-
-    if departamento_id is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El departamento_id no existe")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error": "El email ya existe"})
 
     #Actualización.
     actualizacion = update(Profesor).where(Profesor.id_profesor == id_profesor).values(update_profesor)
@@ -109,8 +102,7 @@ async def update_profesor(id_profesor: int, update_profesor: dict, db_session: A
 
 #DELETE.
 async def delete_profesor(id_profesor: int, db_session: AsyncSession) -> bool:
-    consulta = select(Profesor).where(Profesor.id_profesor == id_profesor)
-    statement_profesor = await db_session.execute(consulta)
+    statement_profesor = await db_session.execute(select(Profesor).where(Profesor.id_profesor == id_profesor))
     db_profesor = statement_profesor.scalar_one_or_none()
 
     #Validar si el registro existe y no se ha marcado como eliminado.

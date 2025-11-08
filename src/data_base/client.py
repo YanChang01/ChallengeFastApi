@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from core.config import settings
 
 #Crear la engine asíncrona.
-engine = create_async_engine(settings.DATABASE_URL, future=True, echo=True)
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
 #Crear la sessión asíncrona de Base de Datos.
 Session_Async = sessionmaker(

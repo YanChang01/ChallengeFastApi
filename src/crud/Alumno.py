@@ -1,12 +1,12 @@
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 
-from typing import List, Optional
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete, func
+from sqlalchemy import update, func
 
 from data_base.models.models import Alumno
-from data_base.schemas.Alumno import CreateAlumno, ReadAlumno, UpdateAlumno
+from data_base.schemas.Alumno import ReadAlumno
 
 #CRUD de Departamento.
 
@@ -18,14 +18,14 @@ async def create_alumno(alumno_data: dict, db_session: AsyncSession) -> ReadAlum
     db_alumno_id = statement_id.scalar_one_or_none()
 
     if isinstance(db_alumno_id, Alumno):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El id ya existe")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error": "El id ya existe"})
 
     #Validar email.
     statement_email = await db_session.execute(select(Alumno).where(Alumno.email == alumno_data.get("email")))
     db_alumno_email = statement_email.scalar_one_or_none()
 
     if isinstance(db_alumno_email, Alumno):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El email ya existe")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error": "El email ya existe"})
 
     #Crear db_alumno.
     db_alumno: Alumno = Alumno(**alumno_data)
@@ -45,7 +45,7 @@ async def read_alumno(id_alumno: int, db_session: AsyncSession) -> ReadAlumno:
     alumno: Alumno = statement_alumno.scalar_one_or_none()
 
     if alumno is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El id del Alumno no existe")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error": "El id del Alumno no existe"})
 
     #Response_alumno.
     return ReadAlumno.model_validate(alumno)
@@ -71,14 +71,14 @@ async def update_alumno(id_alumno: int, update_alumno: dict, db_session: AsyncSe
 
     #Validar id_alumno.
     if alumno is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El id del Alumno no existe")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error": "El id del Alumno no existe"})
     
     #Validar email.
     statement_email = await db_session.execute(select(Alumno).where(Alumno.email == update_alumno.get("email")))
     alumno_email: Alumno = statement_email.scalar_one_or_none()
 
     if isinstance(alumno_email, Alumno):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El email ya existe")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error": "El email ya existe"})
 
     #Actualización.
     actualizacion = update(Alumno).where(Alumno.id_alumno == id_alumno).values(update_alumno)

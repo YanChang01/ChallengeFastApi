@@ -17,7 +17,6 @@ class ReadAlumno(Base):
         "from_attributes": True
     }
 
-
 class UpdateAlumno(Base):
     nombre: str
     facultad: str
